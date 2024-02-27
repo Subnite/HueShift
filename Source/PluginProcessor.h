@@ -9,6 +9,7 @@
 #pragma once
 #include <JuceHeader.h>
 #include "Commons/ParameterNaming.hpp"
+#include "DSP/MidiHandler.hpp"
 
 //==============================================================================
 
@@ -58,7 +59,8 @@ public:
     //==============================================================================
     
 private:
-    
+    juce::MidiBuffer midiOutputBuffer;
+    MidiHandler handler;
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(HueShiftProcessor)
 

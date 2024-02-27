@@ -19,7 +19,8 @@ HueShiftProcessor::HueShiftProcessor()
                       #endif
                        .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
                      #endif
-                       )
+                       ),
+                    handler(midiOutputBuffer, 2)
 #endif
 {   
 }
@@ -30,22 +31,17 @@ HueShiftProcessor::~HueShiftProcessor()
 //==============================================================================
 void HueShiftProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
+    juce::ignoreUnused(sampleRate, samplesPerBlock);
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
 }
 
 void HueShiftProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
-    juce::ignoreUnused(midiMessages);
-    juce::ScopedNoDenormals noDenormals;
-    auto totalNumInputChannels  = getTotalNumInputChannels();
-    auto totalNumOutputChannels = getTotalNumOutputChannels();
-    
-    for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
-    {
-        buffer.clear(i, 0, buffer.getNumSamples());
-    }
+    juce::ignoreUnused(buffer);
 
+    // swap with input buffer
+    midiMessages = midiOutputBuffer;
 }
 
 const juce::String HueShiftProcessor::getName() const
