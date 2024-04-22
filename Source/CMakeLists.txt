@@ -9,7 +9,7 @@ juce_add_plugin(${PLUGIN_PROJECT_NAME}
     IS_MIDI_EFFECT TRUE                 # Is this plugin a MIDI effect?
     PLUGIN_MANUFACTURER_CODE SBNT               # A four-character manufacturer id with at least one upper-case character
     PLUGIN_CODE Shft                            # A unique four-character plugin id with exactly one upper-case character
-    FORMATS VST3                  # The formats to build. Other valid formats are: AAX Unity VST AU AUv3
+    FORMATS VST3 Standalone                  # The formats to build. Other valid formats are: AAX Unity VST AU AUv3
     PRODUCT_NAME ${PLUGIN_VST3_NAME}        # The name of the final executable, which can differ from the target name
     DESCRIPTION "A Light to Midi converter"
     VST3_CATEGORIES Fx
@@ -32,6 +32,7 @@ target_compile_definitions(${PLUGIN_PROJECT_NAME}
         JUCE_WEB_BROWSER=0  # If you remove this, add `NEEDS_WEB_BROWSER TRUE` to the `juce_add_plugin` call
         JUCE_USE_CURL=0     # If you remove this, add `NEEDS_CURL TRUE` to the `juce_add_plugin` call
         JUCE_VST3_CAN_REPLACE_VST2=0
+        JUCE_USE_CAMERA=1
 )
 
 message("****Added target compile definitions")
@@ -41,6 +42,7 @@ target_link_libraries(${PLUGIN_PROJECT_NAME}
         # AudioPluginData           # If we'd created a binary data target, we'd link to it here
         juce::juce_audio_utils
         juce::juce_dsp
+        juce::juce_video
     PUBLIC
         juce::juce_recommended_config_flags
         juce::juce_recommended_lto_flags
@@ -56,12 +58,12 @@ target_include_directories(${PLUGIN_PROJECT_NAME}
         "${CMAKE_CURRENT_SOURCE_DIR}"
 )
 
-if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    message("****Using Clang")
-    target_compile_options(${PLUGIN_PROJECT_NAME}
-        PUBLIC
-            -Wno-sign-conversion
-    )
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+message("****No sign conversion etc")
+target_compile_options(${PLUGIN_PROJECT_NAME}
+    PRIVATE
+    -w
+)
 endif()
 
 juce_generate_juce_header(${PLUGIN_PROJECT_NAME})

@@ -1,5 +1,5 @@
 # General info
-set(JUCE_SOURCE_DIR "C:/Program Files/JUCE") # set juce source dir
+set(JUCE_SOURCE_DIR "C:/Program Files/JUCE_v7.0.5") # set juce source dir
 set(PLUGIN_PROJECT_NAME "HueShift") # preferably no spaces
 set(PLUGIN_VST3_NAME "HueShift") # name of the actual vst3 file
 

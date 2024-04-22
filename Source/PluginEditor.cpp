@@ -18,6 +18,7 @@ HueShiftEditor::HueShiftEditor(HueShiftProcessor& p)
 
     setSize (500, 500);
     setResizable(true, true);
+    addAndMakeVisible(camera);
 }
 
 HueShiftEditor::~HueShiftEditor()
@@ -34,4 +35,7 @@ void HueShiftEditor::paint (juce::Graphics& g)
 
 void HueShiftEditor::resized()
 {
+    auto bounds = getLocalBounds();
+
+    camera.setBounds(bounds);
 }
