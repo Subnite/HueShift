@@ -42,6 +42,7 @@ void HueShiftProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mi
 
     // swap with input buffer
     midiMessages = midiOutputBuffer;
+    midiOutputBuffer.clear();
 }
 
 const juce::String HueShiftProcessor::getName() const
