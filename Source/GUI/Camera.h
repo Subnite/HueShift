@@ -39,6 +39,14 @@ public:
         addAndMakeVisible(cameraViewer);
         resized();
     }
+    
+    // does nothing if there is no camera turned on
+    void GetSnapshot(std::function<void (const juce::Image&)> snapshotCallback) const {
+        // make sure there's a camera active when taking the picture
+        if (camera == nullptr || cameraViewer == nullptr) return;
+        
+        camera->takeStillPicture(snapshotCallback);
+    }
 };
 
 }

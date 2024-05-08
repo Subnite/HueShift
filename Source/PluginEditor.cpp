@@ -11,13 +11,21 @@
 
 //==============================================================================
 HueShiftEditor::HueShiftEditor(HueShiftProcessor& p)
-    : AudioProcessorEditor(&p), audioProcessor(p)
+    : AudioProcessorEditor(&p), audioProcessor(p),
+    cameraSelector(camera),
+    cameraGrid(camera, 50)
 {
-    setSize (500, 500);
+    setSize (1500, 500);
     setResizable(true, true);
+
+    float scale = 1080/1920.f;
+    int x = 20;
+
+    cameraGrid.SetGridSettings(13, x, int(x*scale));
 
     addAndMakeVisible(camera);
     addAndMakeVisible(cameraSelector);
+    addAndMakeVisible(cameraGrid);
 }
 
 HueShiftEditor::~HueShiftEditor()
@@ -38,5 +46,6 @@ void HueShiftEditor::resized()
     auto camSelectorBounds = bounds.removeFromTop(bounds.getHeight()*0.05f);
 
     cameraSelector.setBounds(camSelectorBounds);
-    camera.setBounds(bounds);
+    camera.setBounds(bounds.removeFromRight(bounds.getWidth()*0.5f));
+    cameraGrid.setBounds(bounds);
 }

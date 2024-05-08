@@ -6,7 +6,7 @@ namespace HueShift {
 
 class CameraSelector : public juce::ComboBox {
 private:
-	HueShift::Camera* camera;
+	HueShift::Camera& camera;
 
 	void ResetCameraOptions() {
 		clear();
@@ -31,16 +31,15 @@ private:
 				true    // high quality mode
 			);
 
-			camera->SetCamera(newCam);
+			camera.SetCamera(newCam);
 		};
 	}
 
 public:
-	CameraSelector(HueShift::Camera* camera)
+	CameraSelector(HueShift::Camera& camera)
 	: camera(camera)
 	{
 		ResetCameraOptions();
-
 	}
 
 };
