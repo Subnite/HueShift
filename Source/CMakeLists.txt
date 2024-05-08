@@ -78,7 +78,14 @@ if (${COPY_VST3_AFTER_BUILD})
             TARGET ${PROJECT_NAME}_VST3 POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_directory ${VST3_PATH}/Contents/x86_64-win ${item}/${PLUGIN_VST3_NAME}
         )
+
+        # copy the exe as well
+        add_custom_command(
+            TARGET ${PROJECT_NAME}_Standalone POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory "C:/Dev/Juce Projects/HueShift/build/Source/${PLUGIN_VST3_NAME}_artefacts/${CMAKE_BUILD_TYPE}/Standalone" ${item}/${PLUGIN_VST3_NAME}
+        )
     endforeach()
+
 
 endif()
 

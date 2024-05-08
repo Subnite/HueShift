@@ -13,12 +13,11 @@
 HueShiftEditor::HueShiftEditor(HueShiftProcessor& p)
     : AudioProcessorEditor(&p), audioProcessor(p)
 {
-    // Make sure that before the constructor has finished, you've set the
-    // editor's size to whatever you need it to be.
-
     setSize (500, 500);
     setResizable(true, true);
+
     addAndMakeVisible(camera);
+    addAndMakeVisible(cameraSelector);
 }
 
 HueShiftEditor::~HueShiftEditor()
@@ -36,6 +35,8 @@ void HueShiftEditor::paint (juce::Graphics& g)
 void HueShiftEditor::resized()
 {
     auto bounds = getLocalBounds();
+    auto camSelectorBounds = bounds.removeFromTop(bounds.getHeight()*0.05f);
 
+    cameraSelector.setBounds(camSelectorBounds);
     camera.setBounds(bounds);
 }

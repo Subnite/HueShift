@@ -6,13 +6,12 @@ set(PLUGIN_VST3_NAME "HueShift") # name of the actual vst3 file
 # Post Build Params
 set(COPY_VST3_AFTER_BUILD TRUE) # will copy to the paths in the list below if set to 'TRUE'
 set(LIST_OF_POST_BUILD_VST3_COPY_PATHS 
-    "C:/Program Files/Common Files/VST3"
     "C:/VST ALL/VST3 Custom"
     ${CMAKE_CURRENT_SOURCE_DIR} # the directory of this CMakeLists.txt file
 )
 
 set(LAUNCH_EXE_AFTER_BUILD FALSE) # launches the executable specified below if set to 'TRUE'
-set(POST_BUILD_EXECUTABLE_PATH "C:/Program Files/JUCE/Builds/extras/AudioPluginHost/AudioPluginHost_artefacts/Debug/AudioPluginHost.exe")
+set(POST_BUILD_EXECUTABLE_PATH "C:/Program Files/JUCE_v7.0.5/Builds/extras/AudioPluginHost/AudioPluginHost_artefacts/Debug/AudioPluginHost.exe")
 
 # ===========================================================================================
 cmake_minimum_required(VERSION 3.15)

@@ -10,7 +10,8 @@
 
 #include <JuceHeader.h>
 #include "PluginProcessor.h"
-#include <GUI/Camera.h>
+#include "GUI/Camera.h"
+#include "GUI/CameraSelector.hpp"
 
 //==============================================================================
 /**
@@ -30,7 +31,8 @@ private:
     // access the processor object that created it.
     HueShiftProcessor& audioProcessor;
     
-    Camera camera{};
+    HueShift::Camera camera{};
+    HueShift::CameraSelector cameraSelector{ &camera };
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (HueShiftEditor)
 };
