@@ -20,7 +20,7 @@ HueShiftProcessor::HueShiftProcessor()
                        .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
                      #endif
                        ),
-                    handler(midiOutputBuffer, 2)
+                    handler(midiOutputBuffer)
 #endif
 {   
 }
@@ -32,16 +32,19 @@ HueShiftProcessor::~HueShiftProcessor()
 void HueShiftProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
     juce::ignoreUnused(sampleRate, samplesPerBlock);
-    // Use this method as the place to do any pre-playback
-    // initialisation that you need..
+
+    handler.Reset(sampleRate, Time::getMillisecondCounterHiRes() * 0.001);
 }
 
 void HueShiftProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
     juce::ignoreUnused(buffer);
 
+    handler.Process(midiMessages, colourData, buffer.getNumSamples());
+    
     // swap with input buffer
     midiMessages = midiOutputBuffer;
+
     midiOutputBuffer.clear();
 }
 

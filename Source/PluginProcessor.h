@@ -57,10 +57,10 @@ public:
     void setStateInformation (const void* data, int sizeInBytes) override;
 
     //==============================================================================
-    
+    std::vector<juce::Colour> colourData; // should only be written to from the editor camera.
 private:
     juce::MidiBuffer midiOutputBuffer;
-    MidiHandler handler;
+    HueShift::MidiHandler handler;
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(HueShiftProcessor)
 

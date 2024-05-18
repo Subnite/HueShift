@@ -3,7 +3,15 @@
 #include "juce_graphics/juce_graphics.h"
 #include <vector>
 
+#ifndef C1
+#define C1 24
+#endif
+
 namespace HueShift{
+
+inline int NoteToGridIndex(int noteNumber) {
+	return noteNumber - C1;
+}
 
 class ColorInfo {
 public:
@@ -39,12 +47,12 @@ public:
 	static const ColorInfo pink;
 };
 
-const ColorInfo ColorInfo::red 		= 	ColorInfo(4.5f, 			juce::Range<float>(0.000f, 0.042f));
-const ColorInfo ColorInfo::orange 	= 	ColorInfo(5.f, 				juce::Range<float>(0.042f, 0.111f));
-const ColorInfo ColorInfo::yellow 	= 	ColorInfo(5.166666666f, 	juce::Range<float>(0.111f, 0.172f));
-const ColorInfo ColorInfo::green 	= 	ColorInfo(5.5f, 			juce::Range<float>(0.172f, 0.431f));
-const ColorInfo ColorInfo::cyan 	= 	ColorInfo(6.0f, 			juce::Range<float>(0.431f, 0.494f));
-const ColorInfo ColorInfo::blue 	= 	ColorInfo(6.666666666f, 	juce::Range<float>(0.494f, 0.694f));
-const ColorInfo ColorInfo::violet 	= 	ColorInfo(7.5f, 			juce::Range<float>(0.694f, 0.806f));
-const ColorInfo ColorInfo::pink 	= 	ColorInfo(8.333333333f, 	juce::Range<float>(0.806f, 0.944f));
+inline const ColorInfo ColorInfo::red 		= 	ColorInfo(4.5f, 			juce::Range<float>(0.000f, 0.042f));
+inline const ColorInfo ColorInfo::orange 	= 	ColorInfo(5.f, 				juce::Range<float>(0.042f, 0.111f));
+inline const ColorInfo ColorInfo::yellow 	= 	ColorInfo(5.166666666f, 	juce::Range<float>(0.111f, 0.172f));
+inline const ColorInfo ColorInfo::green 	= 	ColorInfo(5.5f, 			juce::Range<float>(0.172f, 0.431f));
+inline const ColorInfo ColorInfo::cyan 		= 	ColorInfo(6.0f, 			juce::Range<float>(0.431f, 0.494f));
+inline const ColorInfo ColorInfo::blue 		= 	ColorInfo(6.666666666f, 	juce::Range<float>(0.494f, 0.694f));
+inline const ColorInfo ColorInfo::violet 	= 	ColorInfo(7.5f, 			juce::Range<float>(0.694f, 0.806f));
+inline const ColorInfo ColorInfo::pink 		= 	ColorInfo(8.333333333f, 	juce::Range<float>(0.806f, 0.944f));
 }

@@ -13,7 +13,7 @@
 HueShiftEditor::HueShiftEditor(HueShiftProcessor& p)
     : AudioProcessorEditor(&p), audioProcessor(p),
     cameraSelector(camera),
-    cameraGrid(camera, 50)
+    cameraGrid(camera, p, 50)
 {
     setSize (1500, 500);
     setResizable(true, true);

@@ -9,6 +9,7 @@ namespace HueShift{
 class CameraGrid : public juce::Component, public juce::Timer {
 private:
 	const HueShift::Camera& camera;
+	HueShiftProcessor& audioProcessor;
 	juce::Image currentSnapshot;
 	std::vector<std::vector<juce::Colour>> snapshotOutput{}; // row -> column
 	
@@ -61,6 +62,9 @@ private:
 	
 	void timerCallback() override {
 		UpdateGrid();
+
+		// copy over the output to the processor
+		audioProcessor.colourData = GetIndexBasedColours();
 	}
 
 	void paint(Graphics &g) override {
@@ -100,8 +104,8 @@ private:
 	}
 
 public:
-	CameraGrid(const HueShift::Camera& camera, const int& snapshotHz)
-	: camera(camera)
+	CameraGrid(const HueShift::Camera& camera, HueShiftProcessor& processor, const int& snapshotHz)
+	: camera(camera), audioProcessor(processor)
 	{
 		startTimerHz(snapshotHz);
 	}
@@ -131,8 +135,23 @@ public:
 	}
 
 	// vec[y][x] where y goes from top to bottom and x goes from left to right
-	std::vector<std::vector<juce::Colour>> GetGridColours() {
+	std::vector<std::vector<juce::Colour>> GetGridColours() const {
 		return snapshotOutput;
+	}
+
+	// the colours are ordered from left up to right down
+	std::vector<juce::Colour> GetIndexBasedColours() {
+		auto colours = GetGridColours();
+		std::vector<juce::Colour> indexBasedColours;
+		indexBasedColours.reserve(widthDivision * heightDivision);
+
+		for (const auto& xVec : colours) {
+			for (auto colour : xVec) {
+				indexBasedColours.push_back(colour);
+			}
+		}
+
+		return indexBasedColours;
 	}
 };
 
