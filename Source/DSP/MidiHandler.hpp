@@ -7,11 +7,9 @@ namespace HueShift{
 
 // keep data -1 if you want no change.
 struct ReadDataOutput {
-    int
-    freezeGridIndex = -1, // counts from top left to bottom right.
-    unfreezeGridIndex = -1,
-    cameraHz = -1,
-    toggleOctaveIndex = -1;
+    std::vector<int> freezeGridIndexes{}; // counts from top left to bottom right.
+    std::vector<int> cameraHz{}; // uses last index to apply Hz
+    std::vector<int> toggleOctaveIndexes{};
 
     static ReadDataOutput ReadData(const MidiBuffer& buffer) {
         ReadDataOutput output{};
@@ -19,10 +17,14 @@ struct ReadDataOutput {
         for (const auto metadata : buffer)
         {
             auto message = metadata.getMessage();
-            output.freezeGridIndex = message.isNoteOn() ? NoteToGridIndex(message.getNoteNumber()) : -1;
-            output.unfreezeGridIndex = message.isNoteOff() ? NoteToGridIndex(message.getNoteNumber()) : -1;
 
-            // TODO: add functionality for finding the cameraHz and if the octave should be cycled.
+            // when note is not but not velocity zero, add it to freeze grid indexes
+            if (message.isNoteOn(false)) output.freezeGridIndexes.push_back(NoteToGridIndex(message.getNoteNumber()));
+            
+            // when the note is on and the velocity is zero, add it to octave toggle indexes
+            else if (!message.isNoteOn(false) && message.isNoteOn(true)) output.toggleOctaveIndexes.push_back(NoteToGridIndex(message.getNoteNumber()));
+
+            // TODO: add functionality for finding the cameraHz
         }
 
         return output;
@@ -30,60 +32,119 @@ struct ReadDataOutput {
 };
 
 class MidiVoice {
+private:
+    mutable double prevFrequency;
+    bool isFrozen = false;
+    size_t currentOctaveCycleIndex = 0;
+    std::vector<float> octaveMultipliers = {1.f, 2.f, 0.5f};
+
 public:
     // sends a midi message if the frequency wishes it.
     void Process(double frequency, unsigned int noteNumber, unsigned int noteLengthSamples,
-        size_t sampleRate, size_t bufferSize, double startTimeSeconds, MidiBuffer& outputBuffer) const
+        size_t sampleRate, size_t bufferSize, const unsigned int& startTimeSamples, const unsigned int& timeNowSamples, MidiBuffer& outputBuffer) const
     {
-        double timeNow = Time::getMillisecondCounterHiRes() * 0.001 - startTimeSeconds;
-        int samplesNow = static_cast<int>(timeNow * sampleRate);
-        int samplesPerCycle = sampleRate / frequency;
+        if (!isFrozen) prevFrequency = frequency;
+
+        auto timeNow = Time::getMillisecondCounterHiRes() * 0.001;
+        auto samplesNow = timeNowSamples - startTimeSamples;
+        unsigned int samplesPerCycle = static_cast<unsigned int>(sampleRate / (prevFrequency * octaveMultipliers[currentOctaveCycleIndex]));
 
         // note on messages
-        int messageSamplePos = samplesNow % samplesPerCycle;
+        unsigned int messageSamplePos = samplesNow % samplesPerCycle;
         for (messageSamplePos; messageSamplePos < bufferSize; messageSamplePos += samplesPerCycle) {
             auto message = juce::MidiMessage::noteOn(1, noteNumber, uint8(127));
-            message.setTimeStamp(timeNow + messageSamplePos / sampleRate);
+            message.setTimeStamp(timeNow + (messageSamplePos*1.f) / sampleRate);
 
             outputBuffer.addEvent(message, messageSamplePos);
         }
         
         // note off messages
-        int messageOffPos = (samplesNow + noteLengthSamples) % samplesPerCycle;
+        unsigned int messageOffPos = (samplesNow + noteLengthSamples) % samplesPerCycle;
         for (messageOffPos; messageOffPos < bufferSize; messageOffPos += samplesPerCycle) {
-            auto message = juce::MidiMessage::noteOn(1, noteNumber, uint8(127));
-            message.setTimeStamp(timeNow + messageOffPos / sampleRate);
+            auto message = juce::MidiMessage::noteOff(1, noteNumber, uint8(127));
+            message.setTimeStamp(timeNow + (messageOffPos*1.f) / sampleRate);
 
             outputBuffer.addEvent(message, messageOffPos);
         }
+    }
+
+    void ToggleFreeze() {
+        isFrozen = !isFrozen;
+    }
+
+    void ToggleOctave() {
+        // cycle up in the octave vector if you aren't on the last one.
+        currentOctaveCycleIndex = currentOctaveCycleIndex < octaveMultipliers.size()-1 ? currentOctaveCycleIndex+1 : 0;
+    }
+
+    void SetFrequencyMultipliers(std::vector<float> newFrequencyMultipliers) {
+        currentOctaveCycleIndex = 0;
+        octaveMultipliers = newFrequencyMultipliers;
     }
 };
 
 // Base note = C1 (24)
 class MidiHandler {
 private:
-    double startTime; // from when the buffer should start as a pivot point
-    size_t sampleRate;
+    unsigned int startTimeSamples; // from when the buffer should start as a pivot point
+    unsigned int timeElapsedSamples = 0;
+    size_t sampleRate = 48000;
     MidiBuffer& outputBuffer;
+    std::vector<MidiVoice> voices{};
 
-    ReadDataOutput ReadData(const juce::MidiBuffer& buffer) {
+    ReadDataOutput ReadData(const juce::MidiBuffer& buffer) const {
         return ReadDataOutput::ReadData(buffer);
     }
 
     // do stuff to the data like freezing etc
-    void ApplyData(const ReadDataOutput& data) const{
+    void ApplyData(const ReadDataOutput& data) {
+        for (const auto& freezeIdx : data.freezeGridIndexes) {
+            if (freezeIdx < voices.size()) voices[freezeIdx].ToggleFreeze();
+        }
 
+        for (const auto& octaveIndex : data.toggleOctaveIndexes) {
+            if (octaveIndex < voices.size()) voices[octaveIndex].ToggleOctave();
+        }
+    }
+
+    void ProcessVoices(const std::vector<juce::Colour>& gridColours, unsigned int bufferSize) {
+        // firstly make sure the size of the voices vector is the same as gridColours without removing all entries.
+        const int sizeDiff = gridColours.size() - voices.size();
+        if (sizeDiff > 0) {
+            for (auto i = 0; i < sizeDiff; i++) {
+                voices.push_back(MidiVoice{});
+            }
+        } else if (sizeDiff < 0) {
+            for (auto i = 0; i < abs(sizeDiff); i++){
+                voices.pop_back();
+            }
+        }
+
+        // process all voices
+        for (int i = 0; i < gridColours.size() && i < voices.size() && i < 2; i++) {
+            auto& voice = voices[i];
+            voice.Process(
+                ColorInfo::GetClosestColor(gridColours[i]).frequency, // freq
+                C1 + i, // note
+                4000, // note length samples
+                sampleRate,
+                bufferSize,
+                startTimeSamples, // start time in seconds
+                startTimeSamples + timeElapsedSamples,
+                outputBuffer // buffer to write messages to
+            );
+        }
     }
 
 public:
     MidiHandler(juce::MidiBuffer& outputBuffer)
     : outputBuffer(outputBuffer) {
-        startTime = juce::Time::getMillisecondCounterHiRes() * 0.001;
+        startTimeSamples = static_cast<unsigned int>(juce::Time::getMillisecondCounterHiRes() * 0.001 * sampleRate);
     }
 
-    void Reset(size_t sampleRate, double startTimeSeconds) {
+    void Reset(size_t sampleRate, double startTimeSamples) {
         this->sampleRate = sampleRate;
-        this->startTime = startTimeSeconds;
+        this->startTimeSamples = startTimeSamples;
     }
 
     void Process(const juce::MidiBuffer& inputBuffer, const std::vector<juce::Colour>& gridColours, unsigned int bufferSize) {
@@ -92,19 +153,9 @@ public:
         ApplyData(inputData);
 
         // [2] process voices
-        const MidiVoice voice{};
-        for (int i = 0; i < gridColours.size() && i < 1; i++) {
-            voice.Process(
-                ColorInfo::GetClosestColor(gridColours[i]).frequency, // freq
-                C1 + i, // note
-                100, // note length samples
-                sampleRate,
-                bufferSize,
-                startTime, // start time in seconds
-                outputBuffer // buffer to write messages to
-            );
-        }
+        ProcessVoices(gridColours, bufferSize);
 
+        timeElapsedSamples += bufferSize;
     };
 };
 

@@ -13,7 +13,7 @@ private:
 	juce::Image currentSnapshot;
 	std::vector<std::vector<juce::Colour>> snapshotOutput{}; // row -> column
 	
-	unsigned int samplePoints = 13, widthDivision = 5, heightDivision = 4;
+	unsigned int samplePoints = 13, widthDivision = 2, heightDivision = 1;
 	
 	// samplePoints is how many pixels to check per section, width division is how many sections you want in the x axis, same for height.
 	void CalculateGridOutput(const juce::Image& img, const unsigned int& samplePointsPerSection, const unsigned int& widthDivision, const unsigned int& heightDivision) {
@@ -64,6 +64,7 @@ private:
 		UpdateGrid();
 
 		// copy over the output to the processor
+		const std::lock_guard<std::mutex> lock(audioProcessor.colourDataGuard);
 		audioProcessor.colourData = GetIndexBasedColours();
 	}
 

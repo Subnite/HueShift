@@ -7,6 +7,7 @@
 */
 
 #pragma once
+#include <mutex>
 #include <JuceHeader.h>
 #include "Commons/ParameterNaming.hpp"
 #include "DSP/MidiHandler.hpp"
@@ -58,6 +59,7 @@ public:
 
     //==============================================================================
     std::vector<juce::Colour> colourData; // should only be written to from the editor camera.
+    std::mutex colourDataGuard; // locks the colourData. ALWAYS USE IT
 private:
     juce::MidiBuffer midiOutputBuffer;
     HueShift::MidiHandler handler;

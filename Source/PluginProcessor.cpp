@@ -40,6 +40,7 @@ void HueShiftProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mi
 {
     juce::ignoreUnused(buffer);
 
+    const std::lock_guard<std::mutex> lock(colourDataGuard);
     handler.Process(midiMessages, colourData, buffer.getNumSamples());
     
     // swap with input buffer
