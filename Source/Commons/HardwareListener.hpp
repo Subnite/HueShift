@@ -26,14 +26,14 @@ private:
 
 		do {
 			wasBound = udpSocket.bindToPort(HARDWARE_PORT);
-		} while (!wasBound);
+		} while (!wasBound && !threadShouldExit());
 
 		port = udpSocket.getBoundPort();
 		std::cout << "bound to port: " << port << "\n";
 		
 		do {
-			readStatus = udpSocket.waitUntilReady(true, 1000);
-		} while (readStatus != 1);
+			readStatus = udpSocket.waitUntilReady(true, 333);
+		} while (readStatus != 1 && !threadShouldExit());
 
 	}
 
@@ -101,9 +101,8 @@ public:
 	}
 
 	~HardwareListener() override {
-		// stop connection
-		stopThread(2000); // give 2000 ms to stop
-		udpSocket.shutdown();
+		stopThread(3000); // give 3000 ms to stop
+		udpSocket.shutdown(); // stop socket connection
 	}
 
 	void run() override {
@@ -113,10 +112,17 @@ public:
 		while (!threadShouldExit()){
 			wait(1000/updateHz); // runs intervalHz per second minimum
 
-			int bytesRead = udpSocket.read(readBuffer, sizeof(readBuffer), true); // sizeof buffer should be BYTES_PER_MESSAGE
+			int bytesRead = 0;
+			do {
+				if (threadShouldExit()) return;
+				bytesRead = udpSocket.read(readBuffer, sizeof(readBuffer), false); // sizeof buffer should be BYTES_PER_MESSAGE
+				wait(10);
+
+			} while (bytesRead < sizeof(readBuffer) && bytesRead != -1); // to make sure the program can exit when it is destroyed.
+
 			if (bytesRead == -1) {
 				std::cout << "error reading bytes\n";
-				continue;
+				continue; // skip the message.
 			}
 
 			auto message = std::string(readBuffer);
