@@ -3,10 +3,10 @@ message("****Included JUCE at " ${JUCE_SOURCE_DIR})
 
 juce_add_plugin(${PLUGIN_PROJECT_NAME}
     COMPANY_NAME "Subnite Plugins"                          # Specify the name of the plugin's author
-    IS_SYNTH TRUE                       # Is this a synth or an effect?
+    IS_SYNTH FALSE                       # Is this a synth or an effect?
     NEEDS_MIDI_INPUT TRUE               # Does the plugin need midi input?
     NEEDS_MIDI_OUTPUT TRUE              # Does the plugin need midi output?
-    IS_MIDI_EFFECT TRUE                 # Is this plugin a MIDI effect?
+    IS_MIDI_EFFECT FALSE                 # Is this plugin a MIDI effect?
     PLUGIN_MANUFACTURER_CODE SBNT               # A four-character manufacturer id with at least one upper-case character
     PLUGIN_CODE Shft                            # A unique four-character plugin id with exactly one upper-case character
     FORMATS VST3 Standalone                  # The formats to build. Other valid formats are: AAX Unity VST AU AUv3
