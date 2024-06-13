@@ -13,6 +13,7 @@
 #include "GUI/Camera.h"
 #include "GUI/CameraSelector.hpp"
 #include "GUI/CameraGrid.hpp"
+#include "GUI/NetworkDisplay.hpp"
 
 //==============================================================================
 /**
@@ -35,6 +36,8 @@ private:
     HueShift::Camera camera{};
     HueShift::CameraSelector cameraSelector;
     HueShift::CameraGrid cameraGrid; 
+
+    HueShift::NetworkDisplay network{audioProcessor.hardwareListener};
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (HueShiftEditor)
 };

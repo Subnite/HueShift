@@ -20,7 +20,7 @@ private:
 	inline static int port = -1; // it doesn't connect to this port, but updates it to whichever port it connects to.
 
 	// will keep trying to bind socket
-	void SetupUDPWithBlocking(){
+	void SetupUDPWithBlocking() {
 		bool wasBound = false;
 		int readStatus = 0;
 
@@ -38,7 +38,7 @@ private:
 	}
 
 	// returns -69 if not found
-	int ReadNumberFromData(const std::string& data) {
+	int ReadNumberFromData(const std::string& data) const {
 		const char intPrefix = NUMBER_PREFIX;
 		const char intPostfix = NUMBER_POSTFIX;
 
@@ -55,7 +55,7 @@ private:
 		return std::stoi(numberS); // stoi deals with 0s in the beginning.
 	}
 
-	void ApplyDataMidi(const std::string& data){
+	void ApplyDataMidi(const std::string& data) {
 		ReadDataOutput outputData{};
 		
 		if (data[0] == 'f'){ // toggle freeze
@@ -125,7 +125,7 @@ public:
 	}
 
 	// returns -1 when not connected.
-	int GetActivePort() {
+	int GetActivePort() const {
 		return port;
 	}
 };

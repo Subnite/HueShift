@@ -13,7 +13,8 @@
 HueShiftEditor::HueShiftEditor(HueShiftProcessor& p)
     : AudioProcessorEditor(&p), audioProcessor(p),
     cameraSelector(camera),
-    cameraGrid(camera, p, 50)
+    cameraGrid(camera, p, 50),
+    network(audioProcessor.hardwareListener)
 {
     setSize (1500, 500);
     setResizable(true, true);
@@ -26,6 +27,8 @@ HueShiftEditor::HueShiftEditor(HueShiftProcessor& p)
     addAndMakeVisible(camera);
     addAndMakeVisible(cameraSelector);
     addAndMakeVisible(cameraGrid);
+
+    addAndMakeVisible(network);
 }
 
 HueShiftEditor::~HueShiftEditor()
@@ -43,9 +46,13 @@ void HueShiftEditor::paint (juce::Graphics& g)
 void HueShiftEditor::resized()
 {
     auto bounds = getLocalBounds();
-    auto camSelectorBounds = bounds.removeFromTop(bounds.getHeight()*0.05f);
+    auto upperTabsBounds = bounds.removeFromTop(bounds.getHeight()*0.05f);
+    auto camSelectorBounds = upperTabsBounds.removeFromRight(upperTabsBounds.getWidth() * 0.2f);
+    auto portNumberBounds = upperTabsBounds.removeFromLeft(upperTabsBounds.getWidth()*0.1f);
 
     cameraSelector.setBounds(camSelectorBounds);
+    network.setBounds(portNumberBounds);
     camera.setBounds(bounds.removeFromRight(bounds.getWidth()*0.5f));
     cameraGrid.setBounds(bounds);
+
 }
