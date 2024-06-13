@@ -11,6 +11,7 @@
 #include <JuceHeader.h>
 #include "Commons/ParameterNaming.hpp"
 #include "DSP/MidiHandler.hpp"
+#include "Commons/HardwareListener.hpp"
 
 //==============================================================================
 
@@ -60,9 +61,13 @@ public:
     //==============================================================================
     std::vector<juce::Colour> colourData; // should only be written to from the editor camera.
     std::mutex colourDataGuard; // locks the colourData. ALWAYS USE IT
+
+    std::mutex midiUpdateGuard; // locks the midihandler from being accessed from other threads. ALWAYS USE IT
 private:
     juce::MidiBuffer midiOutputBuffer;
     HueShift::MidiHandler handler;
+    HueShift::HardwareListener hardwareListener;
+
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(HueShiftProcessor)
 

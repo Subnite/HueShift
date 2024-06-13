@@ -20,7 +20,8 @@ HueShiftProcessor::HueShiftProcessor()
                        .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
                      #endif
                        ),
-                    handler(midiOutputBuffer)
+                    handler(midiOutputBuffer),
+                    hardwareListener(handler, midiUpdateGuard)
 #endif
 {   
 }
@@ -33,6 +34,11 @@ void HueShiftProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
     juce::ignoreUnused(sampleRate, samplesPerBlock);
 
+    std::unique_lock<std::mutex> lock(midiUpdateGuard, std::try_to_lock);
+    while (!lock.owns_lock()){
+        lock = std::unique_lock<std::mutex>{midiUpdateGuard, std::try_to_lock};
+    }
+
     handler.Reset(sampleRate, Time::getMillisecondCounterHiRes() * 0.001);
 }
 
@@ -40,12 +46,15 @@ void HueShiftProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mi
 {
     juce::ignoreUnused(buffer);
 
-    const std::lock_guard<std::mutex> lock(colourDataGuard);
-    handler.Process(midiMessages, colourData, buffer.getNumSamples());
-    
+    try {
+        const std::lock_guard<std::mutex> lock(colourDataGuard);
+        handler.Process(midiMessages, colourData, buffer.getNumSamples());
+    } catch (std::logic_error&) {
+        std::cout << "couldn't gain lock for midihandler from processBlock\n";
+    }
+
     // swap with input buffer
     midiMessages = midiOutputBuffer;
-
     midiOutputBuffer.clear();
 }
 

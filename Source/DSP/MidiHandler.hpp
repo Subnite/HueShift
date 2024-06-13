@@ -36,7 +36,7 @@ private:
     mutable double prevFrequency;
     bool isFrozen = false;
     size_t currentOctaveCycleIndex = 0;
-    std::vector<float> octaveMultipliers = {1.f, 2.f, 0.5f};
+    std::vector<float> octaveMultipliers = {0.5f, 1.f, 0.25f};
 
 public:
     // sends a midi message if the frequency wishes it.
@@ -96,17 +96,6 @@ private:
         return ReadDataOutput::ReadData(buffer);
     }
 
-    // do stuff to the data like freezing etc
-    void ApplyData(const ReadDataOutput& data) {
-        for (const auto& freezeIdx : data.freezeGridIndexes) {
-            if (freezeIdx < voices.size()) voices[freezeIdx].ToggleFreeze();
-        }
-
-        for (const auto& octaveIndex : data.toggleOctaveIndexes) {
-            if (octaveIndex < voices.size()) voices[octaveIndex].ToggleOctave();
-        }
-    }
-
     void ProcessVoices(const std::vector<juce::Colour>& gridColours, unsigned int bufferSize) {
         // firstly make sure the size of the voices vector is the same as gridColours without removing all entries.
         const int sizeDiff = gridColours.size() - voices.size();
@@ -157,6 +146,17 @@ public:
 
         timeElapsedSamples += bufferSize;
     };
+
+    // do stuff to the data like freezing etc
+    void ApplyData(const ReadDataOutput& data) {
+        for (const auto& freezeIdx : data.freezeGridIndexes) {
+            if (freezeIdx < voices.size()) voices[freezeIdx].ToggleFreeze();
+        }
+
+        for (const auto& octaveIndex : data.toggleOctaveIndexes) {
+            if (octaveIndex < voices.size()) voices[octaveIndex].ToggleOctave();
+        }
+    }
 };
 
 }
