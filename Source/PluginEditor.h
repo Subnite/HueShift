@@ -37,7 +37,7 @@ private:
     HueShift::CameraSelector cameraSelector;
     HueShift::CameraGrid cameraGrid; 
 
-    HueShift::NetworkDisplay network{audioProcessor.hardwareListener};
+    HueShift::NetworkDisplay network;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (HueShiftEditor)
 };

@@ -8,10 +8,10 @@ namespace HueShift{
 class NetworkDisplay : public juce::Component, public juce::Timer {
 private:
     int port = 0;
-    const HardwareListener& hardwareListener;
+    const MIDIListenerUDP& hardwareListener;
     juce::Label label;
 public:
-    NetworkDisplay(const HardwareListener& hardwareListener)
+    NetworkDisplay(const MIDIListenerUDP& hardwareListener)
     :   hardwareListener(hardwareListener) {
         startTimerHz(1);
         label.setText("Port: 0000", juce::NotificationType::dontSendNotification);

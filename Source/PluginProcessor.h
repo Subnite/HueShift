@@ -63,7 +63,8 @@ public:
     std::mutex colourDataGuard; // locks the colourData. ALWAYS USE IT
 
     std::mutex midiUpdateGuard; // locks the midihandler from being accessed from other threads. ALWAYS USE IT
-    HueShift::HardwareListener hardwareListener;
+    HueShift::MIDIListenerUDP hardwareListener;
+    HueShift::DiscoveryHandlerUDP discoveryHandler;
 private:
     juce::MidiBuffer midiOutputBuffer;
     HueShift::MidiHandler handler;

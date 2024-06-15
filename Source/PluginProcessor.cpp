@@ -21,7 +21,8 @@ HueShiftProcessor::HueShiftProcessor()
                      #endif
                        ),
                     handler(midiOutputBuffer),
-                    hardwareListener(handler, midiUpdateGuard)
+                    hardwareListener(handler, midiUpdateGuard),
+                    discoveryHandler()
 #endif
 {   
 }

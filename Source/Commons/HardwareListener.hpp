@@ -7,7 +7,7 @@
 
 namespace HueShift {
 
-class HardwareListener :
+class MIDIListenerUDP :
 	public juce::Thread
 {
 private:
@@ -15,7 +15,7 @@ private:
 	std::mutex& midiGuard;
 	const int updateHz;
 
-	juce::DatagramSocket udpSocket;
+	juce::DatagramSocket receiverSocket;
 	char readBuffer[BYTES_PER_MESSAGE];
 	inline static int port = -1; // it doesn't connect to this port, but updates it to whichever port it connects to.
 
@@ -25,14 +25,14 @@ private:
 		int readStatus = 0;
 
 		do {
-			wasBound = udpSocket.bindToPort(HARDWARE_PORT);
+			wasBound = receiverSocket.bindToPort(HARDWARE_PORT);
 		} while (!wasBound && !threadShouldExit());
 
-		port = udpSocket.getBoundPort();
+		port = receiverSocket.getBoundPort();
 		std::cout << "bound to port: " << port << "\n";
 		
 		do {
-			readStatus = udpSocket.waitUntilReady(true, 333);
+			readStatus = receiverSocket.waitUntilReady(true, 333);
 		} while (readStatus != 1 && !threadShouldExit());
 
 	}
@@ -90,19 +90,19 @@ private:
 public:
 	inline const static int nonum = -498416819; // returned by ReadNumberFromData when the format is incorrect.
 
-	HardwareListener(MidiHandler& midiHandler, std::mutex& midiUpdateLock, const int intervalHz = 20) :
+	MIDIListenerUDP(MidiHandler& midiHandler, std::mutex& midiUpdateLock, const int intervalHz = 20) :
 		juce::Thread("Hardware MIDI Listener"),
 		midiHandler(midiHandler),
 		midiGuard(midiUpdateLock),
 		updateHz(intervalHz),
-		udpSocket(false) // false because it is read-only
+		receiverSocket(false) // false because it is read-only
 	{
 		startThread(juce::Thread::Priority::high);
 	}
 
-	~HardwareListener() override {
+	~MIDIListenerUDP() override {
 		stopThread(3000); // give 3000 ms to stop
-		udpSocket.shutdown(); // stop socket connection
+		receiverSocket.shutdown(); // stop socket connection
 	}
 
 	void run() override {
@@ -115,7 +115,7 @@ public:
 			int bytesRead = 0;
 			do {
 				if (threadShouldExit()) return;
-				bytesRead = udpSocket.read(readBuffer, sizeof(readBuffer), false); // sizeof buffer should be BYTES_PER_MESSAGE
+				bytesRead = receiverSocket.read(readBuffer, sizeof(readBuffer), false); // sizeof buffer should be BYTES_PER_MESSAGE
 				wait(10);
 
 			} while (bytesRead < sizeof(readBuffer) && bytesRead != -1); // to make sure the program can exit when it is destroyed.
@@ -133,6 +133,120 @@ public:
 	// returns -1 when not connected.
 	int GetActivePort() const {
 		return port;
+	}
+};
+
+
+// ==============================================================================
+
+
+class DiscoveryHandlerUDP :
+	public juce::Thread
+{
+private:
+	juce::DatagramSocket receiverSocket;
+	juce::DatagramSocket responseSocket;
+	bool connectedResponseSocket = false;
+
+	// will keep trying to bind socket
+	void SetupUDPWithBlocking() {
+		bool wasBound = false;
+		int readStatus = 0;
+
+		do {
+			wasBound = receiverSocket.bindToPort(DISCOVERY_RECEIVE_PORT);
+		} while (!wasBound && !threadShouldExit());
+
+		std::cout << "discovery receiver bound to port: " << DISCOVERY_RECEIVE_PORT << "\n";
+		
+		do {
+			readStatus = receiverSocket.waitUntilReady(true, 333);
+		} while (readStatus != 1 && !threadShouldExit());
+
+		std::cout << "discovery receiver ready to read\n";
+	}
+
+	void SendDiscoveryResponse(const std::string& targetIP) {
+		bool wasBound = false;
+		int readStatus = 0;
+
+		if (!connectedResponseSocket) { // wasn't connected before
+			do {
+				wasBound = responseSocket.bindToPort(DISCOVERY_RESPONSE_PORT);
+			} while (!wasBound && !threadShouldExit() && !connectedResponseSocket); // safety connected bool
+			
+			connectedResponseSocket = true;
+			std::cout << "discovery response bound to port: " << DISCOVERY_RESPONSE_PORT << "\n";
+		}
+
+		// do {
+		// 	readStatus = responseSocket.waitUntilReady(false, 333);
+		// } while (readStatus != 1 && !threadShouldExit());
+
+		const auto message = juce::String(DISCOVERY_RESPONSE_MESSAGE);
+
+		int status = -1;
+		do {
+			std::cout << "trying to write response to port: " << DISCOVERY_RESPONSE_PORT << "\n";
+
+			status = responseSocket.write(targetIP, DISCOVERY_RESPONSE_PORT, DISCOVERY_RESPONSE_MESSAGE, message.getNumBytesAsUTF8());
+			wait(100);
+		} while (status < message.getNumBytesAsUTF8() || status == -1);
+
+		if (status == -1) std::cerr << "couldn't send message!\n";
+		else std::cout << "sent message!\n";
+	}
+
+public:
+	DiscoveryHandlerUDP() :
+		juce::Thread("Hardware Discovery Listener"),
+		receiverSocket(false), // false because it is read-only
+		responseSocket(true)
+	{
+		receiverSocket.setEnablePortReuse(true);
+		responseSocket.setEnablePortReuse(true);
+
+		startThread(juce::Thread::Priority::high);
+	}
+
+	~DiscoveryHandlerUDP() override {
+		stopThread(3000); // give 3000 ms to stop
+		receiverSocket.shutdown(); // stop socket connection
+		responseSocket.shutdown();
+	}
+
+	void run() override {
+		// make connection
+		SetupUDPWithBlocking();
+
+		while (!threadShouldExit()){
+			char readBuffer[DISCOVERY_RECEIVE_BYTES];
+			wait(10); // wait 10 ms
+
+			int bytesRead = 0;
+			do {
+				if (threadShouldExit()) return;
+				bytesRead = receiverSocket.read(readBuffer, sizeof(readBuffer), false); // sizeof buffer should be BYTES_PER_MESSAGE
+				wait(10);
+
+			} while (bytesRead < sizeof(readBuffer) && bytesRead != -1); // to make sure the program can exit when it is destroyed.
+
+			if (bytesRead == -1) {
+				std::cout << "error reading bytes\n";
+				continue; // skip the message.
+			}
+
+			std::string bMsg; // since the gaw damn bytes are always broken
+			for (auto c : readBuffer) {
+				bMsg += c;
+			}
+
+			auto bufferMessage = bMsg;
+			auto expectedMessage = std::string(DISCOVERY_RECEIVE_MESSAGE);
+			if (bufferMessage == expectedMessage) {
+				SendDiscoveryResponse("255.255.255.255");
+			}
+		}
 	}
 };
 
