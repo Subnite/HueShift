@@ -167,31 +167,25 @@ private:
 	}
 
 	void SendDiscoveryResponse(const std::string& targetIP) {
-		bool wasBound = false;
-		int readStatus = 0;
+		// bool wasBound = false;
+		// int readStatus = 0;
 
-		if (!connectedResponseSocket) { // wasn't connected before
-			do {
-				wasBound = responseSocket.bindToPort(DISCOVERY_RESPONSE_PORT);
-			} while (!wasBound && !threadShouldExit() && !connectedResponseSocket); // safety connected bool
+		// if (!connectedResponseSocket) { // wasn't connected before
+		// 	do {
+		// 		wasBound = responseSocket.bindToPort(0);
+		// 	} while (!wasBound && !threadShouldExit() && !connectedResponseSocket); // safety connected bool
 			
-			connectedResponseSocket = true;
-			std::cout << "discovery response bound to port: " << DISCOVERY_RESPONSE_PORT << "\n";
-		}
-
-		// do {
-		// 	readStatus = responseSocket.waitUntilReady(false, 333);
-		// } while (readStatus != 1 && !threadShouldExit());
+		// 	connectedResponseSocket = true;
+		// 	std::cout << "discovery response bound to port: " << responseSocket.getBoundPort() << "\n";
+		// }
 
 		const auto message = juce::String(DISCOVERY_RESPONSE_MESSAGE);
 
 		int status = -1;
 		do {
-			std::cout << "trying to write response to port: " << DISCOVERY_RESPONSE_PORT << "\n";
-
 			status = responseSocket.write(targetIP, DISCOVERY_RESPONSE_PORT, DISCOVERY_RESPONSE_MESSAGE, message.getNumBytesAsUTF8());
-			wait(100);
-		} while (status < message.getNumBytesAsUTF8() || status == -1);
+			wait(5);
+		} while (status < message.getNumBytesAsUTF8() && status != -1);
 
 		if (status == -1) std::cerr << "couldn't send message!\n";
 		else std::cout << "sent message!\n";
@@ -244,7 +238,15 @@ public:
 			auto bufferMessage = bMsg;
 			auto expectedMessage = std::string(DISCOVERY_RECEIVE_MESSAGE);
 			if (bufferMessage == expectedMessage) {
-				SendDiscoveryResponse("255.255.255.255");
+				//auto localAddr = IPAddress::getLocalAddress().toString();
+				auto allAddr = IPAddress::getAllAddresses();
+				std::cout << "responding to " + std::to_string(allAddr.size()) + " ip's.\n";
+				for (const auto& addr : allAddr) {
+					juce::String changedAddr = addr.toString().upToLastOccurrenceOf(".", true, false);
+					changedAddr.append("255", 3);
+					SendDiscoveryResponse(changedAddr.toStdString());
+				}
+				// SendDiscoveryResponse("255.255.255.255");
 			}
 		}
 	}
