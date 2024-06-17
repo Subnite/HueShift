@@ -20,7 +20,7 @@ HueShiftEditor::HueShiftEditor(HueShiftProcessor& p)
     setResizable(true, true);
 
     float scale = 1080/1920.f;
-    int x = 20;
+    int x = 5;
 
     cameraGrid.SetGridSettings(13, x, int(x*scale));
 
