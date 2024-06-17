@@ -22,6 +22,6 @@
 #define DISCOVERY_RECEIVE_PORT 8179
 #define DISCOVERY_RESPONSE_PORT 8180
 #define DISCOVERY_RECEIVE_MESSAGE "HS_PING"
-#define DISCOVERY_RESPONSE_MESSAGE "HS_FIND"
+#define DISCOVERY_RESPONSE_PREFIX "HS_" // add the port (with zero at the start if needed) after this. Port should be 04848 or 11456 for example.
 #define DISCOVERY_RECEIVE_BYTES 7
-#define DISCOVERY_RESPONSE_BYTES 7
+#define DISCOVERY_RESPONSE_BYTES 8

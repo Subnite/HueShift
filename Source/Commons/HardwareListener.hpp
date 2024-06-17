@@ -131,7 +131,7 @@ public:
 	}
 
 	// returns -1 when not connected.
-	int GetActivePort() const {
+	static int GetActivePort() {
 		return port;
 	}
 };
@@ -179,16 +179,22 @@ private:
 		// 	std::cout << "discovery response bound to port: " << responseSocket.getBoundPort() << "\n";
 		// }
 
-		const auto message = juce::String(DISCOVERY_RESPONSE_MESSAGE);
+		// const auto message = juce::String(DISCOVERY_RESPONSE_PREFIX) + ();
 
 		int status = -1;
 		do {
-			status = responseSocket.write(targetIP, DISCOVERY_RESPONSE_PORT, DISCOVERY_RESPONSE_MESSAGE, message.getNumBytesAsUTF8());
+			auto port = MIDIListenerUDP::GetActivePort();
+			std::string portString = (port < 10000) ? "0" + std::to_string(port) : std::to_string(port);
+
+			portString = std::string(DISCOVERY_RESPONSE_PREFIX) + portString;
+			const char* srcBuff = portString.c_str();
+			
+			status = responseSocket.write(targetIP, DISCOVERY_RESPONSE_PORT, srcBuff, DISCOVERY_RESPONSE_BYTES);
 			wait(5);
-		} while (status < message.getNumBytesAsUTF8() && status != -1);
+		} while (status < DISCOVERY_RESPONSE_BYTES && status != -1);
 
 		if (status == -1) std::cerr << "couldn't send message!\n";
-		else std::cout << "sent message!\n";
+		// else std::cout << "sent message!\n";
 	}
 
 public:
