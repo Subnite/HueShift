@@ -59,6 +59,8 @@ public:
     void setStateInformation (const void* data, int sizeInBytes) override;
 
     //==============================================================================
+    bool isVoiceEnabled(size_t row, size_t column, size_t amtColumns) const;
+
     std::vector<juce::Colour> colourData; // should only be written to from the editor camera.
     std::mutex colourDataGuard; // locks the colourData. ALWAYS USE IT
 

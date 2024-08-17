@@ -57,18 +57,24 @@ private:
 
 	void ApplyDataMidi(const std::string& data) {
 		ReadDataOutput outputData{};
+
+		std::cout << "Read: " << data << "\n";
 		
 		if (data[0] == 'f'){ // toggle freeze
 			auto number = ReadNumberFromData(data);
 			if (number != nonum) outputData.freezeGridIndexes.push_back(number);
 		}
-		else if (data[0] == 'o'){ // toggle freeze
+		else if (data[0] == 'o'){ // toggle octave
 			auto number = ReadNumberFromData(data);
 			if (number != nonum) outputData.toggleOctaveIndexes.push_back(number);
 		}
-		else if (data[0] == 'c'){ // toggle freeze
+		else if (data[0] == 'c'){ // toggle octave
 			auto number = ReadNumberFromData(data);
 			if (number != nonum) outputData.cameraHz.push_back(number);
+		}
+		else if (data[0] == 's'){ // toggle select
+			auto number = ReadNumberFromData(data);
+			if (number != nonum) outputData.selectGridIndex.push_back(number);
 		}
 		else {
 			return; // nothing to change
@@ -147,6 +153,7 @@ private:
 	juce::DatagramSocket receiverSocket;
 	juce::DatagramSocket responseSocket;
 	bool connectedResponseSocket = false;
+	const unsigned int subnetAmt = 1;
 
 	// will keep trying to bind socket
 	void SetupUDPWithBlocking() {
@@ -159,9 +166,9 @@ private:
 
 		std::cout << "discovery receiver bound to port: " << DISCOVERY_RECEIVE_PORT << "\n";
 		
-		do {
-			readStatus = receiverSocket.waitUntilReady(true, 333);
-		} while (readStatus != 1 && !threadShouldExit());
+		// do {
+		// 	readStatus = receiverSocket.waitUntilReady(true, 333);
+		// } while (readStatus != 1 && !threadShouldExit());
 
 		std::cout << "discovery receiver ready to read\n";
 	}
@@ -219,7 +226,9 @@ public:
 		// make connection
 		SetupUDPWithBlocking();
 
+
 		while (!threadShouldExit()){
+		std::cout << "listening??\n";
 			char readBuffer[DISCOVERY_RECEIVE_BYTES];
 			wait(10); // wait 10 ms
 
@@ -248,8 +257,16 @@ public:
 				auto allAddr = IPAddress::getAllAddresses();
 				std::cout << "responding to " + std::to_string(allAddr.size()) + " ip's.\n";
 				for (const auto& addr : allAddr) {
-					juce::String changedAddr = addr.toString().upToLastOccurrenceOf(".", true, false);
-					changedAddr.append("255", 3);
+					juce::String changedAddr = addr.toString();
+
+					// add 255's
+					for (int i = 0; i < subnetAmt; i++) {
+						changedAddr = changedAddr.upToLastOccurrenceOf(".", false, false);
+					}
+					for (int i = 0; i < subnetAmt; i++) {
+						changedAddr.append(".255", 4);
+					}
+					
 					SendDiscoveryResponse(changedAddr.toStdString());
 				}
 				// SendDiscoveryResponse("255.255.255.255");

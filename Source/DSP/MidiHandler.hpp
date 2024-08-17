@@ -10,6 +10,7 @@ struct ReadDataOutput {
     std::vector<int> freezeGridIndexes{}; // counts from top left to bottom right.
     std::vector<int> cameraHz{}; // uses last index to apply Hz
     std::vector<int> toggleOctaveIndexes{};
+    std::vector<int> selectGridIndex{};
 
     static ReadDataOutput ReadData(const MidiBuffer& buffer) {
         ReadDataOutput output{};
@@ -35,6 +36,7 @@ class MidiVoice {
 private:
     mutable double prevFrequency;
     bool isFrozen = false;
+    bool isEnabled = false;
     size_t currentOctaveCycleIndex = 0;
     std::vector<float> octaveMultipliers = {0.5f, 1.f, 0.25f};
 
@@ -43,6 +45,7 @@ public:
     void Process(double frequency, unsigned int noteNumber, unsigned int noteLengthSamples,
         size_t sampleRate, size_t bufferSize, const unsigned int& startTimeSamples, const unsigned int& timeNowSamples, MidiBuffer& outputBuffer) const
     {
+        if (!isEnabled) return;
         if (!isFrozen) prevFrequency = frequency;
 
         auto timeNow = Time::getMillisecondCounterHiRes() * 0.001;
@@ -72,6 +75,10 @@ public:
         isFrozen = !isFrozen;
     }
 
+    void ToggleSelect() {
+        isEnabled = !isEnabled;
+    }
+
     void ToggleOctave() {
         // cycle up in the octave vector if you aren't on the last one.
         currentOctaveCycleIndex = currentOctaveCycleIndex < octaveMultipliers.size()-1 ? currentOctaveCycleIndex+1 : 0;
@@ -80,6 +87,10 @@ public:
     void SetFrequencyMultipliers(std::vector<float> newFrequencyMultipliers) {
         currentOctaveCycleIndex = 0;
         octaveMultipliers = newFrequencyMultipliers;
+    }
+
+    bool isVoiceEnabled() const {
+        return isEnabled;
     }
 };
 
@@ -91,6 +102,7 @@ private:
     size_t sampleRate = 48000;
     MidiBuffer& outputBuffer;
     std::vector<MidiVoice> voices{};
+    bool readyToRead = false;
 
     ReadDataOutput ReadData(const juce::MidiBuffer& buffer) const {
         return ReadDataOutput::ReadData(buffer);
@@ -99,18 +111,23 @@ private:
     void ProcessVoices(const std::vector<juce::Colour>& gridColours, unsigned int bufferSize) {
         // firstly make sure the size of the voices vector is the same as gridColours without removing all entries.
         const int sizeDiff = gridColours.size() - voices.size();
+        if (sizeDiff != 0){
+            readyToRead = false;
+        }
         if (sizeDiff > 0) {
             for (auto i = 0; i < sizeDiff; i++) {
                 voices.push_back(MidiVoice{});
             }
+            readyToRead = true;
         } else if (sizeDiff < 0) {
             for (auto i = 0; i < abs(sizeDiff); i++){
                 voices.pop_back();
             }
+            readyToRead = true;
         }
 
         // process all voices
-        for (int i = 0; i < gridColours.size() && i < voices.size() && i < 2; i++) {
+        for (int i = 0; i < gridColours.size() && i < voices.size()/* && i < 2*/; i++) {
             auto& voice = voices[i];
             voice.Process(
                 ColorInfo::GetClosestColor(gridColours[i]).frequency, // freq
@@ -155,6 +172,29 @@ public:
 
         for (const auto& octaveIndex : data.toggleOctaveIndexes) {
             if (octaveIndex < voices.size()) voices[octaveIndex].ToggleOctave();
+        }
+
+        for (const auto& selectIndex : data.selectGridIndex) {
+            if (selectIndex < voices.size()) voices[selectIndex].ToggleSelect();
+        }
+    }
+
+    // row and column are 0 based
+    bool isVoiceEnabled(size_t column, size_t row, size_t amtColumns) const {
+        size_t index = amtColumns * row + column;
+        // return false;
+        try{
+            if (!readyToRead) return false;
+            if (index < voices.size()){
+                // jassert(index < voices.size());
+                const auto& voice = voices[index];
+                auto res = voice.isVoiceEnabled();
+                return res;
+            }
+
+        } catch (std::logic_error&){
+            std::cerr << "couldn't find voice\n";
+            return false;
         }
     }
 };

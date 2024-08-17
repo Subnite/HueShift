@@ -59,6 +59,10 @@ void HueShiftProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::Mi
     midiOutputBuffer.clear();
 }
 
+bool HueShiftProcessor::isVoiceEnabled(size_t row, size_t column, size_t amtColumns) const {
+    return handler.isVoiceEnabled(column, row, amtColumns);
+}
+
 const juce::String HueShiftProcessor::getName() const
 {
     return juce::String("HueShift");

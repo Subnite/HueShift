@@ -96,6 +96,12 @@ private:
 
 				g.setColour(snapshotOutput[h][w]);
 				g.fillRect(sectionBounds);
+				// if enabled draw rect on the border
+				g.setColour(juce::Colours::black);
+				if (audioProcessor.isVoiceEnabled(h, w, widthDivision)){
+					g.setColour(juce::Colours::white);
+				}
+				g.drawRect(sectionBounds, 2.f);
 			}
 		}
 	}
