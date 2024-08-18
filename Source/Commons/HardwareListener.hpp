@@ -253,23 +253,28 @@ public:
 			auto bufferMessage = bMsg;
 			auto expectedMessage = std::string(DISCOVERY_RECEIVE_MESSAGE);
 			if (bufferMessage == expectedMessage) {
-				//auto localAddr = IPAddress::getLocalAddress().toString();
-				auto allAddr = IPAddress::getAllAddresses();
-				std::cout << "responding to " + std::to_string(allAddr.size()) + " ip's.\n";
-				for (const auto& addr : allAddr) {
-					juce::String changedAddr = addr.toString();
+				const bool useLoopResponse = false; // 2 implementations
 
-					// add 255's
-					for (int i = 0; i < subnetAmt; i++) {
-						changedAddr = changedAddr.upToLastOccurrenceOf(".", false, false);
+				if (useLoopResponse){
+					auto allAddr = IPAddress::getAllAddresses();
+					std::cout << "responding to " + std::to_string(allAddr.size()) + " ip's.\n";
+					for (const auto& addr : allAddr) {
+						juce::String changedAddr = addr.toString();
+						std::cout << "Sending to Addr: " << changedAddr << "\n";
+
+						// add 255's
+						for (int i = 0; i < subnetAmt; i++) {
+							changedAddr = changedAddr.upToLastOccurrenceOf(".", false, false);
+						}
+						for (int i = 0; i < subnetAmt; i++) {
+							changedAddr.append(".255", 4);
+						}
+						
+						SendDiscoveryResponse(changedAddr.toStdString());
 					}
-					for (int i = 0; i < subnetAmt; i++) {
-						changedAddr.append(".255", 4);
-					}
-					
-					SendDiscoveryResponse(changedAddr.toStdString());
+				} else {
+					SendDiscoveryResponse("255.255.255.255");
 				}
-				// SendDiscoveryResponse("255.255.255.255");
 			}
 		}
 	}

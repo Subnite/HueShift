@@ -12,6 +12,8 @@ private:
 	HueShiftProcessor& audioProcessor;
 	juce::Image currentSnapshot;
 	std::vector<std::vector<juce::Colour>> snapshotOutput{}; // row -> column
+
+	bool updatedColoursOnce = false;
 	
 	unsigned int samplePoints = 13, widthDivision = 2, heightDivision = 1;
 	
@@ -66,6 +68,8 @@ private:
 		// copy over the output to the processor
 		const std::lock_guard<std::mutex> lock(audioProcessor.colourDataGuard);
 		audioProcessor.colourData = GetIndexBasedColours();
+
+		updatedColoursOnce = true;
 	}
 
 	void paint(Graphics &g) override {
@@ -98,8 +102,10 @@ private:
 				g.fillRect(sectionBounds);
 				// if enabled draw rect on the border
 				g.setColour(juce::Colours::black);
-				if (audioProcessor.isVoiceEnabled(h, w, widthDivision)){
-					g.setColour(juce::Colours::white);
+				if (updatedColoursOnce){
+					if (audioProcessor.isVoiceEnabled(h, w, widthDivision)){
+						g.setColour(juce::Colours::white);
+					}
 				}
 				g.drawRect(sectionBounds, 2.f);
 			}

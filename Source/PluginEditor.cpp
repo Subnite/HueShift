@@ -29,11 +29,12 @@ HueShiftEditor::HueShiftEditor(HueShiftProcessor& p)
     addAndMakeVisible(cameraGrid);
 
     addAndMakeVisible(network);
+    audioProcessor.isEditorActive = true;
 }
 
 HueShiftEditor::~HueShiftEditor()
 {
-
+  audioProcessor.isEditorActive = false;
 }
 
 //==============================================================================

@@ -67,9 +67,11 @@ public:
     std::mutex midiUpdateGuard; // locks the midihandler from being accessed from other threads. ALWAYS USE IT
     HueShift::MIDIListenerUDP hardwareListener;
     HueShift::DiscoveryHandlerUDP discoveryHandler;
+    bool isEditorActive = false;
 private:
     juce::MidiBuffer midiOutputBuffer;
     HueShift::MidiHandler handler;
+    bool hadEditor = false;
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(HueShiftProcessor)

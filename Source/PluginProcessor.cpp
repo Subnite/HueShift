@@ -46,6 +46,10 @@ void HueShiftProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 void HueShiftProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
     juce::ignoreUnused(buffer);
+    if (hadEditor && !isEditorActive) {
+        hadEditor = false;
+        handler.Reset(handler.GetSampleRate(), Time::getMillisecondCounterHiRes() * 0.001);
+    }
 
     try {
         const std::lock_guard<std::mutex> lock(colourDataGuard);
@@ -170,6 +174,7 @@ bool HueShiftProcessor::hasEditor() const
 
 juce::AudioProcessorEditor* HueShiftProcessor::createEditor()
 {
+    hadEditor = true;
     return new HueShiftEditor (*this);
     //return new juce::GenericAudioProcessorEditor(*this);
 }

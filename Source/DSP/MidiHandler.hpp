@@ -38,7 +38,7 @@ private:
     bool isFrozen = false;
     bool isEnabled = false;
     size_t currentOctaveCycleIndex = 0;
-    std::vector<float> octaveMultipliers = {0.5f, 1.f, 0.25f};
+    inline static std::vector<float> octaveMultipliers = {0.5f, 1.f, 0.25f};
 
 public:
     // sends a midi message if the frequency wishes it.
@@ -84,13 +84,17 @@ public:
         currentOctaveCycleIndex = currentOctaveCycleIndex < octaveMultipliers.size()-1 ? currentOctaveCycleIndex+1 : 0;
     }
 
-    void SetFrequencyMultipliers(std::vector<float> newFrequencyMultipliers) {
-        currentOctaveCycleIndex = 0;
+    static void SetFrequencyMultipliers(std::vector<float> newFrequencyMultipliers) {
+        //currentOctaveCycleIndex = 0;
         octaveMultipliers = newFrequencyMultipliers;
     }
 
     bool isVoiceEnabled() const {
         return isEnabled;
+    }
+
+    double GetFrequency() const {
+        return prevFrequency;
     }
 };
 
@@ -129,10 +133,12 @@ private:
         // process all voices
         for (int i = 0; i < gridColours.size() && i < voices.size()/* && i < 2*/; i++) {
             auto& voice = voices[i];
+            const double vFreq = voice.GetFrequency();
+            const unsigned int len = (sampleRate/vFreq)/2; // div 2 for safety
             voice.Process(
                 ColorInfo::GetClosestColor(gridColours[i]).frequency, // freq
                 C1 + i, // note
-                4000, // note length samples
+                len, // note length samples
                 sampleRate,
                 bufferSize,
                 startTimeSamples, // start time in seconds
@@ -151,6 +157,10 @@ public:
     void Reset(size_t sampleRate, double startTimeSamples) {
         this->sampleRate = sampleRate;
         this->startTimeSamples = startTimeSamples;
+        startTimeSamples = static_cast<unsigned int>(juce::Time::getMillisecondCounterHiRes() * 0.001 * sampleRate);
+        readyToRead = false;
+        timeElapsedSamples = 0;
+        voices.clear();
     }
 
     void Process(const juce::MidiBuffer& inputBuffer, const std::vector<juce::Colour>& gridColours, unsigned int bufferSize) {
@@ -182,20 +192,19 @@ public:
     // row and column are 0 based
     bool isVoiceEnabled(size_t column, size_t row, size_t amtColumns) const {
         size_t index = amtColumns * row + column;
-        // return false;
-        try{
-            if (!readyToRead) return false;
-            if (index < voices.size()){
-                // jassert(index < voices.size());
-                const auto& voice = voices[index];
-                auto res = voice.isVoiceEnabled();
-                return res;
-            }
 
-        } catch (std::logic_error&){
-            std::cerr << "couldn't find voice\n";
-            return false;
+        if (!readyToRead) return false; // readyToRead might need to be atomic.
+        if (index < voices.size()){
+            // jassert(index < voices.size());
+            const auto& voice = voices[index];
+            auto res = voice.isVoiceEnabled();
+            return res;
         }
+        return false;
+    }
+
+    size_t GetSampleRate() const {
+        return sampleRate;
     }
 };
 
